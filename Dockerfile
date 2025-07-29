@@ -26,8 +26,5 @@ RUN pip install --no-cache-dir -e .
 # Expose the port that Flask will run on
 EXPOSE 5000
 
-# Copy the startup script
-COPY startup.py .
-
 # Default command runs training then app
 CMD ["python", "application.py"]
