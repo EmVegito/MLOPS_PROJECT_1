@@ -3,7 +3,7 @@ pipeline{
 
     environment {
         VENV_DIR = 'venv'
-        GCP_PROJECT = "mlops-new-447207"
+        GCP_PROJECT = "carbon-storm-467106-b2"
         GCLOUD_PATH = "/var/jenkins_home/google-cloud-sdk/bin"
     }
 
@@ -34,9 +34,6 @@ pipeline{
             steps{
                 withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
                     script{
-
-                        def serviceAccountKey = readFile(env.GOOGLE_APPLICATION_CREDENTIALS)
-
                         echo 'Building and Pushing Docker Image to GCR.............'
                         sh """
                         export PATH=$PATH:${GCLOUD_PATH}
@@ -48,9 +45,15 @@ pipeline{
 
                         gcloud auth configure-docker --quiet
 
-                        docker build --build-arg GCP_SERVICE_ACCOUNT_KEY=${serviceAccountKey} -t gcr.io/${GCP_PROJECT}/ml-project:latest .
+                        # Copy the credentials file to build context
+                        cp "${GOOGLE_APPLICATION_CREDENTIALS}" ./gcp-key.json
+                        
+                        # Verify the file was copied
+                        echo "Credentials file size: $(stat -c%s gcp-key.json) bytes"
 
-                        docker push gcr.io/${GCP_PROJECT}/ml-project:latest
+                        docker build -t gcr.io/${GCP_PROJECT}/ml-project:01 .
+
+                        docker push gcr.io/${GCP_PROJECT}/ml-project:01
 
                         """
                     }
