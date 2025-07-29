@@ -72,7 +72,7 @@ pipeline{
                             --image=gcr.io/${GCP_PROJECT}/ml-project:01 \
                             --platform=managed \
                             --region=us-central1 \
-                            --allow=unauthenticated
+                            --allow-unauthenticated
 
                         '''
                     }
