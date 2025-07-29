@@ -5,10 +5,6 @@ FROM python:slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Copy the service account key file
-ARG GOOGLE_APPLICATION_CREDENTIALS_PATH
-ENV GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
-    
 # Set the working directory
 WORKDIR /app
 
@@ -21,19 +17,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the application code
 COPY . .
 
-COPY ${GOOGLE_APPLICATION_CREDENTIALS_PATH} /app/credentials.json
-
 # Install the package in editable mode
 RUN pip install --no-cache-dir -e .
 
-# Train the model before running the application
-RUN python pipeline/training_pipeline.py
-
-# Clean up credentials for security (optional)
-RUN rm -rf /app/credentials.json
+# REMOVED: Training pipeline is now run at runtime with mounted credentials
+# RUN python pipeline/training_pipeline.py
 
 # Expose the port that Flask will run on
 EXPOSE 5000
 
-# Command to run the app
+# Copy the startup script
+COPY startup.py .
+
+# Default command runs training then app
 CMD ["python", "application.py"]

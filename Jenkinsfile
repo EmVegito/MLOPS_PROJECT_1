@@ -5,6 +5,7 @@ pipeline{
         VENV_DIR = 'venv'
         GCP_PROJECT = "carbon-storm-467106-b2"
         GCLOUD_PATH = "/var/jenkins_home/google-cloud-sdk/bin"
+        IMAGE_TAG = "gcr.io/${GCP_PROJECT}/ml-project:01"
     }
 
     stages{
@@ -12,7 +13,8 @@ pipeline{
             steps{
                 script{
                     echo 'Cloning Github repo to Jenkins............'
-                    checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/aman-yadav-ds/MLOPS_PROJECT_1.git']])                }
+                    checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/aman-yadav-ds/MLOPS_PROJECT_1.git']])
+                }
             }
         }
 
@@ -30,55 +32,76 @@ pipeline{
             }
         }
 
-        stage('Building and Pushing Docker Image to GCR'){
+        stage('Building Docker Image'){
             steps{
                 withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
                     script{
-                        echo 'Building and Pushing Docker Image to GCR.............'
+                        echo 'Building Docker Image.............'
                         sh '''
                         export PATH=$PATH:${GCLOUD_PATH}
 
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
-
                         gcloud config set project ${GCP_PROJECT}
-
                         gcloud auth configure-docker --quiet
 
-                        docker build -t gcr.io/${GCP_PROJECT}/ml-project:01 .
+                        # Build Docker image WITHOUT credentials
+                        docker build -t ${IMAGE_TAG} .
+                        '''
+                    }
+                }
+            }
+        }
 
-                        docker push gcr.io/${GCP_PROJECT}/ml-project:01
+        stage('Run Training and Application with Credentials'){
+            steps{
+                withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
+                    script{
+                        echo 'Running Training Pipeline and Application with GCP credentials.............'
+                        sh '''
+                        # Run the container with mounted credentials
+                        # This will run training first, then start the Flask app
+                        docker run --rm -d --name ml-pipeline \
+                            -p 8080:8080 \
+                            -v "${GOOGLE_APPLICATION_CREDENTIALS}":/tmp/gcp-credentials.json:ro \
+                            -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
+                            ${IMAGE_TAG}
+                        
+                        # Wait for training to complete and app to start
+                        echo "Waiting for training to complete and app to start..."
+                        sleep 60
+                        
+                        # Check if the app is running
+                        docker logs ml-pipeline
+                        
+                        # Optionally test the app
+                        # curl -f http://localhost:8080/ || echo "App not ready yet"
+                        
+                        # Stop the container (or leave it running for deployment)
+                        docker stop ml-pipeline
+                        '''
+                    }
+                }
+            }
+        }
 
+        stage('Pushing Docker Image to GCR'){
+            steps{
+                withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
+                    script{
+                        echo 'Pushing Docker Image to GCR.............'
+                        sh '''
+                        export PATH=$PATH:${GCLOUD_PATH}
+
+                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+                        gcloud config set project ${GCP_PROJECT}
+
+                        # Push the image to GCR
+                        docker push ${IMAGE_TAG}
                         '''
                     }
                 }
             }
         }
         
-        stage('Pushing Docker image to Google Cloud Run.'){
-            steps{
-                withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
-                    script{
-                        echo 'Pushing Docker image to Google Cloud Run..............'
-                        sh '''
-                        export PATH=$PATH:${GCLOUD_PATH}
-
-                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
-
-                        gcloud config set project ${GCP_PROJECT}
-
-                        gcloud auth configure-docker --quiet
-
-                        gcloud run deploy ml-project \
-                            --image=gcr.io/${GCP_PROJECT}/ml-project:01 \
-                            --platform=managed \
-                            --region=us-central1 \
-                            --allow-unauthenticated
-
-                        '''
-                    }
-                }
-            }
-        }
-
     }
 }
