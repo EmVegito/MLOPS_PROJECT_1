@@ -46,7 +46,7 @@ pipeline {
                         #!/bin/bash -xe # Exit on error, echo commands
 
                         # Authenticate gcloud CLI with the service account key (for docker push)
-                        gcloud auth activate-service-account --key-file=${GCP_KEY_FILE_PATH_IN_JENKINS}
+                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
 
                         # Set the GCP project
                         gcloud config set project ${GCP_PROJECT}
