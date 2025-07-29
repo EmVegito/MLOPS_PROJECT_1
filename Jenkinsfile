@@ -44,9 +44,9 @@ pipeline {
                         echo 'Building and Pushing Docker image to GCR......'
                         sh """
                         #!/bin/bash -xe # Exit on error, echo commands
-                        
-                        # Authenticate gcloud CLI with the service account key
-                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+
+                        # Authenticate gcloud CLI with the service account key (for docker push)
+                        gcloud auth activate-service-account --key-file=${GCP_KEY_FILE_PATH_IN_JENKINS}
 
                         # Set the GCP project
                         gcloud config set project ${GCP_PROJECT}
@@ -54,8 +54,11 @@ pipeline {
                         # Configure Docker to authenticate with GCR
                         gcloud auth configure-docker --quiet
 
-                        # Build the Docker image with the dynamic tag
-                        docker build -t ${IMAGE_FULL_TAG} .
+                        # Build the Docker image, passing the GCP key file path as a build-arg
+                        # This makes the file available inside the Docker build context temporarily.
+                        docker build \\
+                            --build-arg GOOGLE_APPLICATION_CREDENTIALS_BUILD_PATH=${GOOGLE_APPLICATION_CREDENTIALS} \\
+                            -t ${IMAGE_FULL_TAG} .
 
                         # Push the Docker image to GCR
                         docker push ${IMAGE_FULL_TAG}
