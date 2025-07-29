@@ -53,6 +53,32 @@ pipeline{
                 }
             }
         }
+        
+        stage('Pushing Docker image to Google Cloud Run.'){
+            steps{
+                withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
+                    script{
+                        echo 'Pushing Docker image to Google Cloud Run..............'
+                        sh '''
+                        export PATH=$PATH:${GCLOUD_PATH}
+
+                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+
+                        gcloud config set project ${GCP_PROJECT}
+
+                        gcloud auth configure-docker --quiet
+
+                        gcloud run deploy ml-project \
+                            --image=gcr.io/${GCP_PROJECT}/ml-project:01 \
+                            --platform=managed \
+                            --region=us-central1 \
+                            --allow=unauthenticated
+
+                        '''
+                    }
+                }
+            }
+        }
 
     }
 }
