@@ -1,37 +1,30 @@
-# first get a python image 'slim': lightweight image.
+# Use a lightweight Python image
 FROM python:slim
 
-# we don't want our environment to overwrite our .pyc files.
-ENV PYTHONDONTWRITEBYTECODE = 1 \
-    PYTHONUNBUFFERED = 1
+# Set environment variables to prevent Python from writing .pyc files & Ensure Python output is not buffered
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
+# Set the working directory
 WORKDIR /app
 
-# Update all dependencies and install additional dependencies required by lightgbm since recommends download is disabled and
-# forcefully and recursivly remove all the package list downloaded from software repositories by APT (Advance Package Tool)
-RUN apt-get update && apt-get install -y --no-install-recommends \ 
+# Install system dependencies required by LightGBM
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy all code from project dir.
+# Copy the application code
 COPY . .
 
-# Don't install py-chache files and install all other requirements using our setup.py file.
+# Install the package in editable mode
 RUN pip install --no-cache-dir -e .
 
-# Run the training pipeline using the mounted secret
-# The secret will be available at /run/secrets/gcp_key
-# The 'id=gcp_key' in docker build --secret matches 'id=gcp_key' here.
-# 'target=/tmp/gcp_key.json' specifies where it's mounted inside the container.
-RUN --mount=type=secret,id=gcp_key,target=/tmp/gcp_key.json \
-    export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp_key.json && \
-    python pipeline/training_pipeline.py && \
-    rm /tmp/gcp_key.json 
-# Clean up the key file immediately
+# Train the model before running the application
+RUN python pipeline/training_pipeline.py
 
-# Expose our flask application Which will run on port: 5000
+# Expose the port that Flask will run on
 EXPOSE 5000
 
-# Run our app in application.py file.
+# Command to run the app
 CMD ["python", "application.py"]
