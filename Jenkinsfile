@@ -61,7 +61,7 @@ pipeline{
                         # Run the container with mounted credentials
                         # This will run training first, then start the Flask app
                         docker run --rm -d --name ml-pipeline \
-                            -p 8080:8080 \
+                            -p 5000:5000 \
                             -v "${GOOGLE_APPLICATION_CREDENTIALS}":/tmp/gcp-credentials.json:ro \
                             -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
                             ${IMAGE_TAG}
@@ -84,19 +84,24 @@ pipeline{
             }
         }
 
-        stage('Pushing Docker Image to GCR'){
+        stage('Deploy to Google Cloud Run.'){
             steps{
                 withCredentials([file(credentialsId: 'gcp-key' , variable : 'GOOGLE_APPLICATION_CREDENTIALS')]){
                     script{
-                        echo 'Pushing Docker Image to GCR.............'
+                        echo 'Deploy to Google Cloud Run.............'
                         sh '''
                         export PATH=$PATH:${GCLOUD_PATH}
 
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+
                         gcloud config set project ${GCP_PROJECT}
 
-                        # Push the image to GCR
-                        docker push ${IMAGE_TAG}
+                        gcloud run deploy ml-project \
+                            --image=gcr.io/${IMAGE_TAG} \
+                            --platform=managed \
+                            --region=us-central1 \
+                            --allow-unauthenticated
+                            
                         '''
                     }
                 }
