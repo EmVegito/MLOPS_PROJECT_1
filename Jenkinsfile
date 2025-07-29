@@ -38,7 +38,7 @@ pipeline{
                         def serviceAccountKey = readFile(env.GOOGLE_APPLICATION_CREDENTIALS)
 
                         echo 'Building and Pushing Docker Image to GCR.............'
-                        sh '''
+                        sh """
                         export PATH=$PATH:${GCLOUD_PATH}
 
 
@@ -48,11 +48,11 @@ pipeline{
 
                         gcloud auth configure-docker --quiet
 
-                        docker build --build-arg GCP_SERVICE_ACCOUNT_KEY='${serviceAccountKey}' -t gcr.io/${GCP_PROJECT}/ml-project:latest .
+                        docker build --build-arg GCP_SERVICE_ACCOUNT_KEY=${serviceAccountKey} -t gcr.io/${GCP_PROJECT}/ml-project:latest .
 
-                        docker push gcr.io/${GCP_PROJECT}/ml-project:latest 
+                        docker push gcr.io/${GCP_PROJECT}/ml-project:latest
 
-                        '''
+                        """
                     }
                 }
             }
