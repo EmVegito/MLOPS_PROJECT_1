@@ -21,6 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the application code
 COPY . .
 
+COPY ${GOOGLE_APPLICATION_CREDENTIALS_PATH} /app/credentials.json
+
 # Install the package in editable mode
 RUN pip install --no-cache-dir -e .
 
