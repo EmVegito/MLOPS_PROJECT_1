@@ -38,18 +38,11 @@ pipeline{
                         sh '''
                         export PATH=$PATH:${GCLOUD_PATH}
 
-
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
 
                         gcloud config set project ${GCP_PROJECT}
 
                         gcloud auth configure-docker --quiet
-
-                        # Copy the credentials file to build context
-                        cp "${GOOGLE_APPLICATION_CREDENTIALS}" ./gcp-key.json
-                        
-                        # Verify the file was copied
-                        echo "Credentials file size: $(stat -c%s gcp-key.json) bytes"
 
                         docker build -t gcr.io/${GCP_PROJECT}/ml-project:01 .
 
@@ -60,6 +53,6 @@ pipeline{
                 }
             }
         }
-        
+
     }
 }

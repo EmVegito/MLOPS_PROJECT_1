@@ -5,14 +5,12 @@ FROM python:slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# Copy the service account key file
+ARG GOOGLE_APPLICATION_CREDENTIALS_PATH
+ENV GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    
 # Set the working directory
 WORKDIR /app
-
-# Copy the service account key file
-COPY gcp-key.json /tmp/gcp-credentials.json
-
-# Set the Google Cloud credentials environment variable
-ENV GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json
 
 # Install system dependencies required by LightGBM
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,7 +28,7 @@ RUN pip install --no-cache-dir -e .
 RUN python pipeline/training_pipeline.py
 
 # Clean up credentials for security (optional)
-RUN rm -f /tmp/gcp-credentials.json
+RUN rm -rf /app/credentials.json
 
 # Expose the port that Flask will run on
 EXPOSE 5000
