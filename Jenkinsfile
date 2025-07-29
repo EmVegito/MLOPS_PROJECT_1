@@ -48,9 +48,7 @@ pipeline{
 
                         gcloud auth configure-docker --quiet
 
-                        docker build \
-                            --build-arg GCP_SERVICE_ACCOUNT_KEY='${serviceAccountKey}' \ 
-                            -t gcr.io/${GCP_PROJECT}/ml-project:latest .
+                        docker build --build-arg GCP_SERVICE_ACCOUNT_KEY='${serviceAccountKey}' -t gcr.io/${GCP_PROJECT}/ml-project:latest .
 
                         docker push gcr.io/${GCP_PROJECT}/ml-project:latest 
 
