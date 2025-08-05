@@ -34,7 +34,7 @@ In the hospitality industry, reservation cancellations can significantly impact 
 
 <img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
 
-## <img src="https://media.giphy.com/media/WUlplcMpOCEmTGBtBW/giphy.gif" width="50" height="50"/> MLOps Architecture
+## MLOps Architecture
 
 ### 🏗️ **Complete Pipeline Components**
 
@@ -47,10 +47,6 @@ graph TD
     E --> F[Model Evaluation]
     F --> G[Model Registry]
     G --> H[Model Deployment - GCP]
-    H --> I[Prediction API]
-    I --> J[Monitoring & Logging]
-    J --> K[Model Retraining]
-    K --> E
 ```
 
 <img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif">
